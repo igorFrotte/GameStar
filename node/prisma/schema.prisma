@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id          Int     @id @default(autoincrement())
+  name        String
+  maxPlayer   Int
+  description String
+  url         String
+  Match       Match[]
+}
+
+model Match {
+  id        Int         @id @default(autoincrement())
+  gameId    Int
+  date      DateTime?   @default(now()) @db.Timestamp(6)
+  time      Int?
+  winnerId  Int?
+  Game      Game        @relation(fields: [gameId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  UserMatch UserMatch[]
+}
+
+model User {
+  id        Int         @id @default(autoincrement())
+  name      String
+  email     String      @unique
+  googleId  Int         @unique
+  image     String
+  UserMatch UserMatch[]
+}
+
+model UserMatch {
+  id      Int   @id @default(autoincrement())
+  matchId Int
+  userId  Int
+  Match   Match @relation(fields: [matchId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User    User  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}

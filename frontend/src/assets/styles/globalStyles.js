@@ -64,7 +64,7 @@ body {
     font-family: 'Raleway', sans-serif;
 	display: flex;
 	justify-content: center;
-	background-color: #8C11BE;
+	background-color: #303F73;
 }
 .root {
 	height: 100%;

@@ -13,6 +13,12 @@ const io = new Server(server, {
   }
 });
 
+//vou tirar daqui
+const board = [['','',''],['','',''],['','','']];
+board[0][1] = '#454545';
+board[0][0] = "url('https://lh3.googleusercontent.com/a/AEdFTp5v9jKEaBtXiLRVPrdb2FajCm6KQD98pq0kSfo5Kg=s96-c') no-repeat";
+
+
 app.get("/status", (req, res) => {
   res.sendStatus(200);
 });
@@ -32,8 +38,8 @@ app.get("/game", (req, res) => {
 io.on('connection', (socket) => {
   console.log(socket.id);
   socket.on('msg', (data)=> {
-    console.log(data.msg);
-    socket.emit('receiveMsg', data);
+    console.log(data);
+    socket.emit('receiveMsg', {board});
   });
 });
 

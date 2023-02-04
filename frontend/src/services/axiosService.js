@@ -21,4 +21,10 @@ function validToken() {
   return promise;
 }
 
-export { login, validToken };
+function gameIn() {
+  const header = createHeader();
+  const promise = axios.get(BASE_URL + "game", header);
+  return promise;
+}
+
+export { login, validToken, gameIn };

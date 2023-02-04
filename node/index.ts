@@ -14,10 +14,16 @@ const io = new Server(server, {
 });
 
 //vou tirar daqui
-const board = [['','',''],['','',''],['','','']];
-board[0][1] = '#454545';
-board[0][0] = "url('https://lh3.googleusercontent.com/a/AEdFTp5v9jKEaBtXiLRVPrdb2FajCm6KQD98pq0kSfo5Kg=s96-c') no-repeat";
-
+const board = [
+  ['','','','',''],
+  ['','','','',''],
+  ['','','','',''],
+  ['','','','',''],
+  ['','','','','']
+]; //sempre x por x
+const boardInf = {
+  players: [],
+};
 
 app.get("/status", (req, res) => {
   res.sendStatus(200);
@@ -38,10 +44,40 @@ app.get("/game", (req, res) => {
 io.on('connection', (socket) => {
   console.log(socket.id);
   socket.on('msg', (data)=> {
-    console.log(data);
-    socket.emit('receiveMsg', {board});
+
+    if(boardInf.players.filter((e)=> e.googleId === data.googleId).length){
+      move(data.googleId, data.key);
+    }else{
+      let positionX = 0;
+      let positionY = 0;
+      boardInf.players.push({...data, positionX, positionY});
+      board[positionX][positionY] = data.picture;
+    }
+
+    socket.emit('receiveMsg', board); //n ta mandando pra tds
   });
 });
+
+function move( playerId, direction){
+  const player = boardInf.players.filter((e)=> e.googleId === playerId)[0];
+  if(direction === 'up' && player.positionX !== 0){
+    board[player.positionX][player.positionY] = player.color;
+    player.positionX--;
+  }
+  if(direction === 'down' && player.positionX < board.length-1){
+    board[player.positionX][player.positionY] = player.color;
+    player.positionX++;
+  }
+  if(direction === 'right' && player.positionY < board.length-1){
+    board[player.positionX][player.positionY] = player.color;
+    player.positionY++;
+  }
+  if(direction === 'left' && player.positionY !== 0){
+    board[player.positionX][player.positionY] = player.color;
+    player.positionY--;
+  }
+  board[player.positionX][player.positionY] = player.picture;
+}
 
 server.listen(5000, () => {
   console.log("Running on 5000");

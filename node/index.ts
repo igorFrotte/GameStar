@@ -50,12 +50,12 @@ io.on('connection', (socket) => {
     }else{
       let positionX = 0;
       let positionY = 0;
-      boardInf.players.push({...data, positionX, positionY});
+      boardInf.players.push({...data, positionX, positionY, color:'#'+(boardInf.players.length+3)*111});
       board[positionX][positionY] = data.picture;
     }
 
-    socket.emit('receiveMsg', board); //n ta mandando pra tds
-  });
+    io.sockets.emit('receiveMsg', board); 
+  }); 
 });
 
 function move( playerId, direction){

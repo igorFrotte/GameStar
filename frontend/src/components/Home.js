@@ -35,7 +35,7 @@ export default function Login() {
 
     const sendMsg = (key = null)=> {
         const auth = JSON.parse(localStorage.getItem("gamestar"));
-        let obj = {...auth, color: '#343434'};
+        let obj = {...auth};
         if(key){
             obj = {...obj, key};
         }
@@ -73,7 +73,7 @@ const GameBoard = styled.div`
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: aqua;
+        background-color: white;
     }
     img, .color {
         width: 100%;

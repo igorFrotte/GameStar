@@ -17,6 +17,8 @@ const io = new Server(server, {
 function newGame(){
   return {
     players: [],
+    started: false,
+    gameOver: false,
     board: [
       ['','','','','','','','','','','','','','','','','','','',''],
       ['','','','','','','','','','','','','','','','','','','',''],
@@ -41,7 +43,7 @@ function newGame(){
     ]
   };
 }
-const game = newGame();
+let game = newGame();
 
 app.get("/status", (req, res) => {
   res.sendStatus(200);
@@ -55,28 +57,97 @@ app.get("/token", (req, res) => {
   res.sendStatus(200);
 });
 
-app.get("/game", (req, res) => {
-  res.sendFile('htmlFile/index.html', { root: './' });
+app.post("/adm", (req, res) => {
+  game = newGame();
+  res.send("game resetado! :)").status(200);
 });
 
 io.on('connection', (socket) => {
 
-  socket.on('msg', (data)=> {
+  socket.on('act', (data)=> {
     if(game.players.filter((e)=> e.googleId === data.googleId).length){
-      move(data.googleId, data.key);
+      if(game.started && !game.gameOver){
+        move(data.googleId, data.key);
+      }
     }else{
-      let positionX = getRandomInt(game.board.length);
-      let positionY = getRandomInt(game.board.length);
-      game.players.push({...data, positionX, positionY, color:'#'+(game.players.length+3)*111});
-      game.board[positionX][positionY] = data.picture;
+      if(!game.gameOver){
+        newPlayer(data);
+      }
     }
-    io.sockets.emit('receiveMsg', game.board); 
+    io.sockets.emit('receiveAct', game.board);
+  });
+
+  socket.on('ready', (data)=> {
+    const player = game.players.filter((e)=> e.googleId === data)[0];
+    player.ready = !player.ready;
+    if(game.players.filter((e)=> e.ready === true).length > 1 && !game.started){
+      startGame();
+    }
   });
 
 });
 
+function startGame(){
+  game.started = true;
+  setTimeout(() => {
+    game.gameOver = true;
+    io.sockets.emit('status', getWinner());
+  }, 60000);
+}
+
+function getWinner() {
+  const hashList = {};
+  const aux = [];
+  const obj = [];
+  for(let i=0; i< game.board.length; i++){
+    for(let j=0; j< game.board.length; j++){
+      let item = game.board[i][j];
+      if(item){
+        if(hashList[item]){
+          hashList[item] = hashList[item] + 1;
+        }else {
+          hashList[item] = 1;
+          aux.push(item);
+        }
+      }
+    }
+  }
+  for(let i=0; i< aux.length; i++){
+    if(aux[i].length<8){
+      let player = game.players.filter((e)=> e.color === aux[i])[0];
+      obj.push({
+        name: player.name,
+        score: hashList[aux[i]]
+      });
+    }
+  }
+  return obj;
+}
+
+function newPlayer(data) {
+  let positionX = getRandomInt(game.board.length);
+  let positionY = getRandomInt(game.board.length);
+  game.players.push({
+    ...data, 
+    positionX, 
+    positionY, 
+    color: getRandomColor(),
+    ready: false
+  });
+  game.board[positionX][positionY] = data.picture;
+}
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
+}
+
+function getRandomColor() {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
 }
 
 function move( playerId, direction){

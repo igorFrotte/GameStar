@@ -5,15 +5,23 @@ import styled from "styled-components";
 
 const socket = io.connect('http://localhost:5000/');
 
-export default function Login() {
+export default function Home() {
 
     const [board, setBoard] = useState([]);
+    const [ready, setReady] = useState(false);
+    const [score, setScore] = useState([]);
 
     useEffect(()=> {
-        socket.on('receiveMsg', (data) => {
-            console.log(data);
+
+        socket.on('receiveAct', (data) => {
             setBoard(data);
         });
+
+        socket.on('status', (data) => {
+            alert('Acabou o tempo!');
+            setScore(data);
+        });
+
         window.addEventListener('keydown', (event) => {
             if(event.key === 'W' || event.key === 'w' || event.key === 'ArrowUp'){
                 sendMsg('up');
@@ -31,20 +39,23 @@ export default function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket]);
 
-    console.log(board);
-
     const sendMsg = (key = null)=> {
-        const auth = JSON.parse(localStorage.getItem("gamestar"));
-        let obj = {...auth};
+        let obj = JSON.parse(localStorage.getItem("gamestar"));
         if(key){
             obj = {...obj, key};
         }
-        socket.emit('msg', obj); 
+        socket.emit('act', obj); 
     }
 
     return (
         <>
-            <button onClick={() => sendMsg() }> Clicke Aqui!</button>
+            <button onClick={() => {
+                let auth = JSON.parse(localStorage.getItem("gamestar"));
+                sendMsg();
+                setReady(!ready);
+                socket.emit('ready', auth.googleId);
+            } }> Clicke Aqui!</button>
+            {ready? <div>Ready!</div> : ''}
             <GameBoard>
                 {board.map((e,i) => {
                     return <div key={i}>
@@ -59,9 +70,23 @@ export default function Login() {
                     </div>;
                 })}
             </GameBoard>
+            <Score>
+                {score.length? score.map( (e,i) => {
+                    return <div key={i}>
+                        <div>{e.name} :</div>
+                        <div>{e.score}</div>
+                    </div>;
+                }) : ''}
+            </Score>
         </>
     );
 }
+
+const Score = styled.div`
+    & > div{
+        display: flex;
+    }
+`;
 
 const GameBoard = styled.div`
     & > div {

@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -14,11 +15,12 @@ const io = new Server(server, {
 });
 
 //vou tirar daqui
-function newGame(){
+function newGame(mirror = false){
   return {
     players: [],
     started: false,
     gameOver: false,
+    mirrorMode: mirror,
     board: [
       ['','','','','','','','','','','','','','','','','','','',''],
       ['','','','','','','','','','','','','','','','','','','',''],
@@ -58,7 +60,15 @@ app.get("/token", (req, res) => {
 });
 
 app.post("/adm", (req, res) => {
-  game = newGame();
+  const { gameMode } = req.body;
+
+  if( gameMode === 'mirror' ){
+    game = newGame(true);
+  }else {
+    game = newGame();
+  } 
+  
+  io.sockets.emit('resetGame', true);
   res.send("game resetado! :)").status(200);
 });
 
@@ -92,7 +102,7 @@ function startGame(){
   setTimeout(() => {
     game.gameOver = true;
     io.sockets.emit('status', getWinner());
-  }, 60000);
+  }, 10000); // mudar para 60
 }
 
 function getWinner() {
@@ -122,6 +132,34 @@ function getWinner() {
     }
   }
   return obj;
+}
+
+function drivenMirror(){
+  return {
+    board: [
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0],
+      [0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
+      [0,1,0,0,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
+      [0,1,0,0,0,1,0,0,1,1,1,1,0,0,0,0,1,0,0,0],
+      [0,1,0,0,0,1,0,0,1,1,0,0,0,0,0,0,1,0,0,0],
+      [0,1,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0],
+      [0,1,1,1,0,0,0,0,1,0,0,1,0,0,1,1,1,1,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0,1,0],
+      [0,1,0,0,0,1,0,0,1,0,0,0,0,0,1,1,0,0,1,0],
+      [0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,1,0],
+      [0,0,1,0,1,0,0,0,1,1,1,1,0,0,1,0,1,0,1,0],
+      [0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0],
+      [0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0],
+      [0,0,0,1,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    ],
+    colors: ['#efefef','#f23e93']
+  }
 }
 
 function newPlayer(data) {

@@ -17,6 +17,12 @@ export default function Home() {
             setBoard(data);
         });
 
+        socket.on('resetGame', (data) => {
+            setBoard([]);
+            setReady(false);
+            setScore([]);
+        });
+
         socket.on('status', (data) => {
             alert('Acabou o tempo!');
             setScore(data);

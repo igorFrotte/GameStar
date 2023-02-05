@@ -14,16 +14,34 @@ const io = new Server(server, {
 });
 
 //vou tirar daqui
-const board = [
-  ['','','','',''],
-  ['','','','',''],
-  ['','','','',''],
-  ['','','','',''],
-  ['','','','','']
-]; //sempre x por x
-const boardInf = {
-  players: [],
-};
+function newGame(){
+  return {
+    players: [],
+    board: [
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','','','','','','']
+    ]
+  };
+}
+const game = newGame();
 
 app.get("/status", (req, res) => {
   res.sendStatus(200);
@@ -42,41 +60,44 @@ app.get("/game", (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  console.log(socket.id);
-  socket.on('msg', (data)=> {
 
-    if(boardInf.players.filter((e)=> e.googleId === data.googleId).length){
+  socket.on('msg', (data)=> {
+    if(game.players.filter((e)=> e.googleId === data.googleId).length){
       move(data.googleId, data.key);
     }else{
-      let positionX = 0;
-      let positionY = 0;
-      boardInf.players.push({...data, positionX, positionY, color:'#'+(boardInf.players.length+3)*111});
-      board[positionX][positionY] = data.picture;
+      let positionX = getRandomInt(game.board.length);
+      let positionY = getRandomInt(game.board.length);
+      game.players.push({...data, positionX, positionY, color:'#'+(game.players.length+3)*111});
+      game.board[positionX][positionY] = data.picture;
     }
+    io.sockets.emit('receiveMsg', game.board); 
+  });
 
-    io.sockets.emit('receiveMsg', board); 
-  }); 
 });
 
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
 function move( playerId, direction){
-  const player = boardInf.players.filter((e)=> e.googleId === playerId)[0];
+  const player = game.players.filter((e)=> e.googleId === playerId)[0];
   if(direction === 'up' && player.positionX !== 0){
-    board[player.positionX][player.positionY] = player.color;
+    game.board[player.positionX][player.positionY] = player.color;
     player.positionX--;
   }
-  if(direction === 'down' && player.positionX < board.length-1){
-    board[player.positionX][player.positionY] = player.color;
+  if(direction === 'down' && player.positionX < game.board.length-1){
+    game.board[player.positionX][player.positionY] = player.color;
     player.positionX++;
   }
-  if(direction === 'right' && player.positionY < board.length-1){
-    board[player.positionX][player.positionY] = player.color;
+  if(direction === 'right' && player.positionY < game.board.length-1){
+    game.board[player.positionX][player.positionY] = player.color;
     player.positionY++;
   }
   if(direction === 'left' && player.positionY !== 0){
-    board[player.positionX][player.positionY] = player.color;
+    game.board[player.positionX][player.positionY] = player.color;
     player.positionY--;
   }
-  board[player.positionX][player.positionY] = player.picture;
+  game.board[player.positionX][player.positionY] = player.picture;
 }
 
 server.listen(5000, () => {

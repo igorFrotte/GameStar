@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5000/";
+const BASE_URL = "http://18.204.13.63/api/";
 
 function createHeader() {
   const auth = JSON.parse(localStorage.getItem("gamestar"));

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import styled from "styled-components";
 
-const socket = io.connect('http://app_node:5000');
+const socket = io.connect('http://54.236.44.48/api');
 
 export default function Home() {
 

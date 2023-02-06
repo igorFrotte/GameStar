@@ -88,7 +88,7 @@ app.post("/adm", (req, res) => {
 });
 
 io.on('connection', (socket) => {
-
+  console.log(socket.id);
   socket.on('act', (data)=> {
     if(game.players.filter((e)=> e.googleId === data.googleId).length){
       if(game.started && !game.gameOver){
@@ -102,6 +102,7 @@ io.on('connection', (socket) => {
     if(game.mirrorMode){
       io.sockets.emit('mirror', game.mirror);
     }
+    console.log(data);
     io.sockets.emit('receiveAct', game.board);
   });
 

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://app_node/api";
+const BASE_URL = "http://app_node/api/";
 
 function createHeader() {
   const auth = JSON.parse(localStorage.getItem("gamestar"));

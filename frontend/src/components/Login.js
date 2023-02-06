@@ -13,8 +13,9 @@ export default function Login() {
       name: 'teste', 
       email: 'teste@teste.com', 
       picture: 'https://nerdhits.com.br/wp-content/uploads/2022/12/road-of-naruto-768x432.jpg', 
-      googleId: 11111111111111111111111
+      googleId: getRandomInt(100)*10000 + getRandomInt(100)*100 + getRandomInt(100)
     };
+    console.log(userInfo.googleId); //tirar
     const promise = login(userInfo);
     promise
       .then((r) => {
@@ -30,6 +31,10 @@ export default function Login() {
     localStorage.clear("gamestar");
     alert("Erro ao logar!");
   };
+
+  function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+  }
 
 	return (
 		<div className="container">

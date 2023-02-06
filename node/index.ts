@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -14,11 +15,17 @@ const io = new Server(server, {
 });
 
 //vou tirar daqui
-function newGame(){
-  return {
+function newGame(mirrorMode, time){
+  const obj = {
     players: [],
+    time,
     started: false,
     gameOver: false,
+    mirrorMode,
+    mirror: {
+      mirrorBoard: [],
+      mirrorColors: []
+    },
     board: [
       ['','','','','','','','','','','','','','','','','','','',''],
       ['','','','','','','','','','','','','','','','','','','',''],
@@ -42,8 +49,14 @@ function newGame(){
       ['','','','','','','','','','','','','','','','','','','','']
     ]
   };
+
+  if(mirrorMode){
+    obj.mirror = drivenMirror();
+  }
+
+  return obj;
 }
-let game = newGame();
+let game = newGame(false, 60000);
 
 app.get("/status", (req, res) => {
   res.sendStatus(200);
@@ -58,7 +71,19 @@ app.get("/token", (req, res) => {
 });
 
 app.post("/adm", (req, res) => {
-  game = newGame();
+  let { gameMode, gameTime } = req.body;
+
+  if(!gameTime || isNaN(gameTime)){
+    gameTime = 60000;
+  }
+
+  if( gameMode === 'mirror' ){
+    game = newGame(true, gameTime);
+  }else {
+    game = newGame(false, gameTime);
+  } 
+
+  io.sockets.emit('resetGame', true);
   res.send("game resetado! :)").status(200);
 });
 
@@ -73,6 +98,9 @@ io.on('connection', (socket) => {
       if(!game.gameOver){
         newPlayer(data);
       }
+    }
+    if(game.mirrorMode){
+      io.sockets.emit('mirror', game.mirror);
     }
     io.sockets.emit('receiveAct', game.board);
   });
@@ -89,10 +117,15 @@ io.on('connection', (socket) => {
 
 function startGame(){
   game.started = true;
+  io.sockets.emit('time', game.time);
   setTimeout(() => {
     game.gameOver = true;
-    io.sockets.emit('status', getWinner());
-  }, 60000);
+    if(!game.mirrorMode){
+      io.sockets.emit('status', getWinner());
+    }else {
+      io.sockets.emit('status', false);
+    }
+  }, game.time);
 }
 
 function getWinner() {
@@ -124,16 +157,50 @@ function getWinner() {
   return obj;
 }
 
+function drivenMirror(){ //simulação do BD
+  return {
+    mirrorBoard: [
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0],
+      [0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
+      [0,1,0,0,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0],
+      [0,1,0,0,0,1,0,0,1,1,1,1,0,0,0,0,1,0,0,0],
+      [0,1,0,0,0,1,0,0,1,1,0,0,0,0,0,0,1,0,0,0],
+      [0,1,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0],
+      [0,1,1,1,0,0,0,0,1,0,0,1,0,0,1,1,1,1,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0,1,0],
+      [0,1,0,0,0,1,0,0,1,0,0,0,0,0,1,1,0,0,1,0],
+      [0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,1,1,0,1,0],
+      [0,0,1,0,1,0,0,0,1,1,1,1,0,0,1,0,1,0,1,0],
+      [0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0],
+      [0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,1,1,0],
+      [0,0,0,1,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    ],
+    mirrorColors: ['#484848','#f23e93']
+  }
+}
+
 function newPlayer(data) {
   let positionX = getRandomInt(game.board.length);
   let positionY = getRandomInt(game.board.length);
-  game.players.push({
+  const player = {
     ...data, 
     positionX, 
     positionY, 
     color: getRandomColor(),
     ready: false
-  });
+  };
+
+  if(game.mirrorMode){
+    player.color = game.mirror.mirrorColors[game.players.length % game.mirror.mirrorColors.length];
+  }
+
+  game.players.push(player);
   game.board[positionX][positionY] = data.picture;
 }
 

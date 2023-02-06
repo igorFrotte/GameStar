@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://app_node/api/";
+const BASE_URL = "http://54.236.44.48/api/"; //ip da aws
 
 function createHeader() {
   const auth = JSON.parse(localStorage.getItem("gamestar"));

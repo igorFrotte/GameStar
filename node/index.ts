@@ -15,12 +15,17 @@ const io = new Server(server, {
 });
 
 //vou tirar daqui
-function newGame(mirror = false){
-  return {
+function newGame(mirrorMode, time){
+  const obj = {
     players: [],
+    time,
     started: false,
     gameOver: false,
-    mirrorMode: mirror,
+    mirrorMode,
+    mirror: {
+      mirrorBoard: [],
+      mirrorColors: []
+    },
     board: [
       ['','','','','','','','','','','','','','','','','','','',''],
       ['','','','','','','','','','','','','','','','','','','',''],
@@ -44,8 +49,14 @@ function newGame(mirror = false){
       ['','','','','','','','','','','','','','','','','','','','']
     ]
   };
+
+  if(mirrorMode){
+    obj.mirror = drivenMirror();
+  }
+
+  return obj;
 }
-let game = newGame();
+let game = newGame(false, 60000);
 
 app.get("/status", (req, res) => {
   res.sendStatus(200);
@@ -60,14 +71,18 @@ app.get("/token", (req, res) => {
 });
 
 app.post("/adm", (req, res) => {
-  const { gameMode } = req.body;
+  let { gameMode, gameTime } = req.body;
+
+  if(!gameTime || isNaN(gameTime)){
+    gameTime = 60000;
+  }
 
   if( gameMode === 'mirror' ){
-    game = newGame(true);
+    game = newGame(true, gameTime);
   }else {
-    game = newGame();
+    game = newGame(false, gameTime);
   } 
-  
+
   io.sockets.emit('resetGame', true);
   res.send("game resetado! :)").status(200);
 });
@@ -84,6 +99,9 @@ io.on('connection', (socket) => {
         newPlayer(data);
       }
     }
+    if(game.mirrorMode){
+      io.sockets.emit('mirror', game.mirror);
+    }
     io.sockets.emit('receiveAct', game.board);
   });
 
@@ -99,10 +117,15 @@ io.on('connection', (socket) => {
 
 function startGame(){
   game.started = true;
+  io.sockets.emit('time', game.time);
   setTimeout(() => {
     game.gameOver = true;
-    io.sockets.emit('status', getWinner());
-  }, 10000); // mudar para 60
+    if(!game.mirrorMode){
+      io.sockets.emit('status', getWinner());
+    }else {
+      io.sockets.emit('status', false);
+    }
+  }, game.time);
 }
 
 function getWinner() {
@@ -134,9 +157,9 @@ function getWinner() {
   return obj;
 }
 
-function drivenMirror(){
+function drivenMirror(){ //simulação do BD
   return {
-    board: [
+    mirrorBoard: [
       [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
       [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
       [0,1,1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,0],
@@ -158,20 +181,26 @@ function drivenMirror(){
       [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
       [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     ],
-    colors: ['#efefef','#f23e93']
+    mirrorColors: ['#484848','#f23e93']
   }
 }
 
 function newPlayer(data) {
   let positionX = getRandomInt(game.board.length);
   let positionY = getRandomInt(game.board.length);
-  game.players.push({
+  const player = {
     ...data, 
     positionX, 
     positionY, 
     color: getRandomColor(),
     ready: false
-  });
+  };
+
+  if(game.mirrorMode){
+    player.color = game.mirror.mirrorColors[game.players.length % game.mirror.mirrorColors.length];
+  }
+
+  game.players.push(player);
   game.board[positionX][positionY] = data.picture;
 }
 

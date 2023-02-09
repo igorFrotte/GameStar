@@ -4,7 +4,7 @@ import io from "socket.io-client";
 import styled from "styled-components";
 
 const socket = io.connect('http://54.236.44.48/', {
-    path: "/api/"
+    path: "/api/socket.io/"
   });
 
 export default function Home() {

@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import styled from "styled-components";
 
-const socket = io.connect('http://54.236.44.48/api/');
+const socket = io.connect('http://54.236.44.48/', {
+    path: "/api/"
+  });
 
 export default function Home() {
 

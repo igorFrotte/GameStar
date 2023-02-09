@@ -8,10 +8,9 @@ app.use(cors());
 app.use(express.json());
 const server = createServer(app);
 const io = new Server(server, {
-  /* cors: {
-    origin: '*',
-    methods: ["GET", "POST"]
-  } */
+  cors: {
+    origin: '*'
+  } 
 });
 
 //vou tirar daqui
